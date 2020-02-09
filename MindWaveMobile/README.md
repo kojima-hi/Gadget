@@ -8,7 +8,6 @@ Its SDK is written in Python2.
 ```
 
 ## Next
-- run with measurement interval
 - storing rate
 - signals have noize?
 
