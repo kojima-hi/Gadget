@@ -3,6 +3,7 @@
 from copy import deepcopy
 import re
 import sys
+import time
 import argparse
 import thinkgear
 PORT = '/dev/tty.MindWaveMobile-SerialPo'
@@ -10,10 +11,16 @@ PORT = '/dev/tty.MindWaveMobile-SerialPo'
 
 class Signal:
     def __init__(self, quality_threshold=30, output_file='signal.out', measurement_time=1):
+        # inform
+        print('output file:              {}'.format(output_file))
+        print('measurement time (min):   {}'.format(measurement_time))
+        print('signal quality threshold: {}'.format(quality_threshold))
+
         # var
         self.quality_threshold = quality_threshold
         self.output_file = output_file
-        # self.measurement_time = measurement_time
+        self.measurement_time = float(measurement_time * 60)
+        self.start_time = time.time()
 
         # packet types
         self.signal_quality_types = ['POOR']
@@ -81,10 +88,16 @@ class Signal:
                 f.write('\n')
             print('stored. {:3d}, {:3d} (ATT, MED)'.format(self.signal_dict['ATTENTION'], self.signal_dict['MEDITATION']))
         else:
-            print('not stored: poor signal')
+            print('not stored: poor signal {}'.format(self.signal_dict['POOR']))
 
         self.initialize()
         return
+
+    def check_end(self):
+        is_end = False
+        if (time.time() - self.start_time) > self.measurement_time:
+            is_end = True
+        return is_end
 
 
 def get_parse():
@@ -92,12 +105,15 @@ def get_parse():
 
     parser.add_argument('-o', '--output', type=str, required=True,
                         help='output file for store signal')
+    parser.add_argument('-m', '--measurement', type=int, default=1,
+                        help='measurement time (min)')
 
     return parser.parse_args()
 
 
-def work(output_file):
-    signal = Signal(output_file=output_file)
+def work(output_file, measurement_time):
+    signal = Signal(output_file=output_file, measurement_time=measurement_time)
+    is_end = False
     for packets in thinkgear.ThinkGearProtocol(PORT).get_packets():
         for packet in packets:
             if isinstance(packet, thinkgear.ThinkGearRawWaveData):
@@ -106,10 +122,15 @@ def work(output_file):
             signal.store(str(packet))
             if signal.check_stored():
                 signal.output()
+                is_end = signal.check_end()
+
+        if is_end:
+            break
+
 
 def main():
     args = get_parse()
-    work(args.output)
+    work(args.output, args.measurement)
     return
 
 
