@@ -1,0 +1,25 @@
+# Python
+source/__pycache__
+*.pyc
+
+# Tex
+*.aux
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.idx
+*.ilg
+*.ind
+*.toc
+sub*pdf
+
+# Gaussian
+fort.7
+*chk
+*log
+
+# Mac
+.DS_Store
+
