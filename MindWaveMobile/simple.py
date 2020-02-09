@@ -3,6 +3,7 @@
 from copy import deepcopy
 import re
 import sys
+import argparse
 import thinkgear
 PORT = '/dev/tty.MindWaveMobile-SerialPo'
 
@@ -72,13 +73,13 @@ class Signal:
 
     def output(self):
         if self.signal_dict['POOR'] < self.quality_threshold:
-            print('stored')
             with open(self.output_file, 'a') as f:
                 for signal_types in [self.signal_quality_types, self.signal_wave_types, self.signal_state_types]:
                     for signal_type in signal_types:
                         f.write('{} '.format(self.signal_dict[signal_type]))
                         #sys.stdout.write('{} '.format(signal_type))
                 f.write('\n')
+            print('stored. {:3d}, {:3d} (ATT, MED)'.format(self.signal_dict['ATTENTION'], self.signal_dict['MEDITATION']))
         else:
             print('not stored: poor signal')
 
@@ -86,8 +87,17 @@ class Signal:
         return
 
 
-def work():
-    signal = Signal()
+def get_parse():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-o', '--output', type=str, required=True,
+                        help='output file for store signal')
+
+    return parser.parse_args()
+
+
+def work(output_file):
+    signal = Signal(output_file=output_file)
     for packets in thinkgear.ThinkGearProtocol(PORT).get_packets():
         for packet in packets:
             if isinstance(packet, thinkgear.ThinkGearRawWaveData):
@@ -98,7 +108,8 @@ def work():
                 signal.output()
 
 def main():
-    work()
+    args = get_parse()
+    work(args.output)
     return
 
 
